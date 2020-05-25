@@ -1,0 +1,34 @@
+{{ define "home" }}
+{{ template "head" . }}
+    <title>Mail Tester</title>
+  </head>
+  <body>
+      <div class="header">
+        <div class="title">Mail Tester</div>
+      </div>
+      <div class="content">
+        <div class="emails">
+          {{ range . }}
+            <div class="email">
+              <div class="id">
+                {{ .ID }}
+              </div>
+              <div class="address">
+                <div class="to">
+                  <span>T:</span> {{ .To }}
+                </div>
+                <div class="from">
+                  <span>F:</span> {{ .From }}
+                </div>
+              </div>
+              <div class="subject">
+                {{ .Subject }}
+              </div>
+              <a href="/mail/{{ .ID }}"></a>
+            </div>
+          {{end}}
+        </div>
+      </div>
+  </body>
+</html>
+{{ end }}

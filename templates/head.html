@@ -1,0 +1,68 @@
+{{ define "head" }}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="icon" href="/static/img/favicon.png">
+    <style>
+      html, body {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        font-family: Helvetica, sans-serif;
+      }
+      .header {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        border-bottom: 1px solid #bcd;
+        padding: 28px 0 24px;
+        justify-content: center;
+        align-items: center;
+      }
+      .title {
+        font-size: 24px;
+      }
+      .content {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      .emails .email {
+        width: 100%;
+        border: 1px solid #bcd;
+        position: relative;
+        min-height: 70px;
+        display: flex;
+        align-items: center;
+        padding: 8px 24px;
+        box-sizing: border-box;
+      }
+      .emails .email:hover {
+        background-color: #f8f8fb;
+      }
+      .emails .email:not(:first-child) {
+        border-top: none;
+      }
+      .emails .email a {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+      }
+      .emails .email > div:not(:last-child) {
+        margin-right: 24px;
+      }
+      .emails .email .id {
+        min-width: 24px;
+      }
+      .emails .email .address {
+        min-width: 240px;
+        line-height: 1.4em;
+      }
+      .emails .email .address span {
+        font-weight: 600;
+      }
+    </style>
+{{ end }}

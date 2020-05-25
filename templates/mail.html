@@ -1,0 +1,57 @@
+{{ define "mail" }}
+{{ template "head" . }}
+<style>
+  .go-home {
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    padding: 16px 0;
+  }
+  .mail-info > div {
+    padding: 6px 0;
+    line-height: 1.2em;
+    display: flex;
+  }
+  .mail-info .r1 {
+    min-width: 80px;
+    text-align: right;
+    margin-right: 8px;
+    font-weight: 600;
+  }
+  .mail-info .r2 {
+    max-width: 600px;
+  }
+</style>
+    <title>Mail {{.Email.ID}}</title>
+  </head>
+  <body>
+    <div class="header">
+      <div class="title">Mail {{.Email.ID}}</div>
+      <div class="go-home">
+        Go back <a href="/">home</a>.
+      </div>
+      <div class="mail-info">
+        <div>
+          <div class="r1">Subject:</div>
+          <div class="r2">{{.Email.Subject}}</div>
+        </div>
+        <div>
+          <div class="r1">To:</div>
+          <div class="r2">{{.Email.To}}</div>
+        </div>
+        <div>
+          <div class="r1">From:</div>
+          <div class="r2">{{.Email.From}}</div>
+        </div>
+        <div>
+          <div class="r1">Text:</div>
+          <div class="r2">{{.Email.Text}}</div>
+        </div>
+      </div>
+    </div>
+    <div class="content">
+      {{.RawHTML}}
+    </div>
+  </body>
+</html>
+{{ end }}
