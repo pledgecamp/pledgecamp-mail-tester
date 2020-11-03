@@ -13,6 +13,13 @@ import (
 	"github.com/pledgecamp/mail-tester/db"
 )
 
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
+
 func getMailRouter(w http.ResponseWriter, _ *http.Request, p httprouter.Params) {
 	param := p.ByName("id")
 	if param == "latest" {
@@ -28,12 +35,9 @@ func getMailRouter(w http.ResponseWriter, _ *http.Request, p httprouter.Params) 
 }
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-	port := os.Getenv("PORT")
-	dev := (os.Getenv("DEV") == "1")
+	godotenv.Load()
+	port := getEnv("PORT", "4020")
+	dev := getEnv("DEV", "1")
 	fmt.Println(fmt.Sprintf("Listening on port %s, dev = %v", port, dev))
 
 	db.InitDb(false)
