@@ -53,6 +53,7 @@ func AddMail(mail *Email) {
 	statement, err := db.Prepare("INSERT INTO mail (sender, receiver, subject, text, html) VALUES (?, ?, ?, ?, ?)")
 	checkError(err)
 	statement.Exec(mail.To, mail.From, mail.Subject, mail.Text, mail.HTML)
+	db.Close()
 }
 
 // GetMail gets mail by database ID
@@ -64,7 +65,9 @@ func GetMail(id int) (Email, error) {
 
 	mail := Email{ID: id}
 	row := statement.QueryRow(id)
-	switch err := row.Scan(&mail.To, &mail.From, &mail.Subject, &mail.Text, &mail.HTML); err {
+	err = row.Scan(&mail.To, &mail.From, &mail.Subject, &mail.Text, &mail.HTML)
+	db.Close()
+	switch err {
 	case sql.ErrNoRows:
 		return mail, ErrNoEmail(id)
 	case nil:
@@ -91,6 +94,7 @@ func GetAllMail() []Email {
 		checkError(err)
 		mailList = append(mailList, mail)
 	}
+	db.Close()
 	return mailList
 }
 
@@ -102,7 +106,9 @@ func GetLatestMail() Email {
 	checkError(err)
 	mail := Email{}
 	row := statement.QueryRow()
-	switch err := row.Scan(&mail.ID, &mail.To, &mail.From, &mail.Subject, &mail.Text, &mail.HTML); err {
+	err = row.Scan(&mail.ID, &mail.To, &mail.From, &mail.Subject, &mail.Text, &mail.HTML)
+	db.Close()
+	switch err {
 	case sql.ErrNoRows:
 		return Email{ID: 0}
 	case nil:
