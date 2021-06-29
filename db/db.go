@@ -42,12 +42,14 @@ func InitDb(drop bool) {
 	defer db.Close()
 	if drop {
 		statement, err := db.Prepare("DROP TABLE IF EXISTS mail")
+		defer statement.Close()
 		checkError(err)
 		statement.Exec()
 	}
 	statement, err := db.Prepare(
 		"CREATE TABLE IF NOT EXISTS mail (id INTEGER PRIMARY KEY, sender TEXT, receiver TEXT, subject TEXT, text TEXT, html TEXT)",
 	)
+	defer statement.Close()
 	checkError(err)
 	statement.Exec()
 }
@@ -58,6 +60,7 @@ func AddMail(mail *Email) int64 {
 	defer db.Close()
 	checkError(err)
 	statement, err := db.Prepare("INSERT INTO mail (sender, receiver, subject, text, html) VALUES (?, ?, ?, ?, ?)")
+	defer statement.Close()
 	checkError(err)
 	result, err := statement.Exec(mail.To, mail.From, mail.Subject, mail.Text, mail.HTML)
 	checkError(err)
@@ -71,6 +74,7 @@ func GetMail(id int64) (Email, error) {
 	defer db.Close()
 	checkError(err)
 	statement, err := db.Prepare("SELECT sender, receiver, subject, text, html FROM mail WHERE id=?")
+	defer statement.Close()
 	checkError(err)
 
 	mail := Email{ID: id}
@@ -93,6 +97,7 @@ func GetAllMail() []Email {
 	defer db.Close()
 	checkError(err)
 	statement, err := db.Prepare("SELECT id, sender, receiver, subject, SUBSTR(text, 0, 100) FROM mail")
+	defer statement.Close()
 	checkError(err)
 	rows, err := statement.Query()
 	checkError(err)
@@ -113,6 +118,7 @@ func GetLatestMail() Email {
 	defer db.Close()
 	checkError(err)
 	statement, err := db.Prepare("SELECT id, sender, receiver, subject, text, html FROM mail WHERE id = (SELECT MAX(id) FROM mail)")
+	defer statement.Close()
 	checkError(err)
 	mail := Email{}
 	row := statement.QueryRow()
