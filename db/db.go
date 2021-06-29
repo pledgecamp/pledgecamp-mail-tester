@@ -3,13 +3,14 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"os"
 
 	_ "github.com/mattn/go-sqlite3" // Database driver
 )
 
 // Email is a standard email
 type Email struct {
-	ID      int
+	ID      int64
 	To      string
 	From    string
 	Subject string
@@ -30,9 +31,15 @@ func checkError(err error) {
 	}
 }
 
+func dbOpen() (*sql.DB, error) {
+	dbSuffix, _ := os.LookupEnv("DB_SUFFIX")
+	return sql.Open("sqlite3", fmt.Sprintf("./app-%v.db", dbSuffix))
+}
+
 // InitDb initializes the application database
 func InitDb(drop bool) {
-	db, err := sql.Open("sqlite3", "./app-dev.db")
+	db, err := dbOpen()
+	defer db.Close()
 	if drop {
 		statement, err := db.Prepare("DROP TABLE IF EXISTS mail")
 		checkError(err)
@@ -43,22 +50,25 @@ func InitDb(drop bool) {
 	)
 	checkError(err)
 	statement.Exec()
-	db.Close()
 }
 
 // AddMail saves mail to the database
-func AddMail(mail *Email) {
-	db, err := sql.Open("sqlite3", "./app-dev.db")
+func AddMail(mail *Email) int64 {
+	db, err := dbOpen()
+	defer db.Close()
 	checkError(err)
 	statement, err := db.Prepare("INSERT INTO mail (sender, receiver, subject, text, html) VALUES (?, ?, ?, ?, ?)")
 	checkError(err)
-	statement.Exec(mail.To, mail.From, mail.Subject, mail.Text, mail.HTML)
-	db.Close()
+	result, err := statement.Exec(mail.To, mail.From, mail.Subject, mail.Text, mail.HTML)
+	checkError(err)
+	id, _ := result.LastInsertId()
+	return id
 }
 
 // GetMail gets mail by database ID
-func GetMail(id int) (Email, error) {
-	db, err := sql.Open("sqlite3", "./app-dev.db")
+func GetMail(id int64) (Email, error) {
+	db, err := dbOpen()
+	defer db.Close()
 	checkError(err)
 	statement, err := db.Prepare("SELECT sender, receiver, subject, text, html FROM mail WHERE id=?")
 	checkError(err)
@@ -66,7 +76,6 @@ func GetMail(id int) (Email, error) {
 	mail := Email{ID: id}
 	row := statement.QueryRow(id)
 	err = row.Scan(&mail.To, &mail.From, &mail.Subject, &mail.Text, &mail.HTML)
-	db.Close()
 	switch err {
 	case sql.ErrNoRows:
 		return mail, ErrNoEmail(id)
@@ -80,7 +89,8 @@ func GetMail(id int) (Email, error) {
 
 // GetAllMail gets all stored mail
 func GetAllMail() []Email {
-	db, err := sql.Open("sqlite3", "./app-dev.db")
+	db, err := dbOpen()
+	defer db.Close()
 	checkError(err)
 	statement, err := db.Prepare("SELECT id, sender, receiver, subject, SUBSTR(text, 0, 100) FROM mail")
 	checkError(err)
@@ -94,20 +104,19 @@ func GetAllMail() []Email {
 		checkError(err)
 		mailList = append(mailList, mail)
 	}
-	db.Close()
 	return mailList
 }
 
 // GetLatestMail gets the most recent stored mail
 func GetLatestMail() Email {
-	db, err := sql.Open("sqlite3", "./app-dev.db")
+	db, err := dbOpen()
+	defer db.Close()
 	checkError(err)
 	statement, err := db.Prepare("SELECT id, sender, receiver, subject, text, html FROM mail WHERE id = (SELECT MAX(id) FROM mail)")
 	checkError(err)
 	mail := Email{}
 	row := statement.QueryRow()
 	err = row.Scan(&mail.ID, &mail.To, &mail.From, &mail.Subject, &mail.Text, &mail.HTML)
-	db.Close()
 	switch err {
 	case sql.ErrNoRows:
 		return Email{ID: 0}

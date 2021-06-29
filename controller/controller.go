@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/pledgecamp/mail-tester/db"
@@ -17,8 +19,13 @@ type ViewEmail struct {
 	RawHTML template.HTML
 }
 
+func parseId(id string) (int64, error) {
+	return strconv.ParseInt(id, 10, 64)
+}
+
 // ErrorHandler is a catchall for displaying 404 responses
 func ErrorHandler(w http.ResponseWriter) {
+	w.WriteHeader(404)
 	t, _ := template.ParseFiles("templates/404.html")
 	t.Execute(w, nil)
 }
@@ -32,7 +39,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 // EmailHandler displays a single Email view
 func EmailHandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	id, err := strconv.Atoi(p.ByName("id"))
+	id, err := parseId(p.ByName("id"))
 	if err != nil {
 		ErrorHandler(w)
 		return
@@ -51,9 +58,11 @@ func EmailHandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 }
 
 func printMail(e *db.Email) {
-	fmt.Println(fmt.Sprintf("\n\nFrom: %s    |    To: %s", e.From, e.To))
-	fmt.Println(fmt.Sprintf("Subject: %s\n", e.Subject))
-	fmt.Println(e.Text)
+	if strings.Contains(log.Prefix(), "Mail") {
+		log.Println(fmt.Sprintf("From: %s    |    To: %s", e.From, e.To))
+		log.Println(fmt.Sprintf("Subject: %s", e.Subject))
+		log.Println(fmt.Sprintf("%s\n", e.Text))
+	}
 }
 
 // PostMail writes new mail to the database and returns the JSON object
@@ -69,12 +78,22 @@ func PostMail(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 
 	printMail(&mail)
-	db.AddMail(&mail)
+	mail.ID = db.AddMail(&mail)
 	json.NewEncoder(w).Encode(mail)
 }
 
-// GetMail wries a JSON object corresponding to the input ID
-func GetMail(w http.ResponseWriter, id int) {
+// GetMail writes a JSON object corresponding to the input ID
+func GetMail(w http.ResponseWriter, _ *http.Request, p httprouter.Params) {
+	idParam := p.ByName("id")
+	if idParam == "latest" {
+		GetLatestMail(w)
+		return
+	}
+	id, err := parseId(idParam)
+	if err != nil {
+		ErrorHandler(w)
+		return
+	}
 	mail, err := db.GetMail(id)
 	if err != nil {
 		ErrorHandler(w)
