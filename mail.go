@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/joho/godotenv"
 	"github.com/julienschmidt/httprouter"
@@ -20,28 +19,7 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-func getMailRouter(w http.ResponseWriter, _ *http.Request, p httprouter.Params) {
-	param := p.ByName("id")
-	if param == "latest" {
-		controller.GetLatestMail(w)
-		return
-	}
-	id, err := strconv.Atoi(param)
-	if err != nil {
-		controller.ErrorHandler(w)
-		return
-	}
-	controller.GetMail(w, id)
-}
-
-func main() {
-	godotenv.Load()
-	port := getEnv("PORT", "4020")
-	dev := getEnv("DEV", "1")
-	fmt.Println(fmt.Sprintf("Listening on port %s, dev = %v", port, dev))
-
-	db.InitDb(false)
-
+func setupRouter() *httprouter.Router {
 	router := httprouter.New()
 
 	// Mail viewer routes
@@ -50,9 +28,22 @@ func main() {
 
 	// API routes
 	router.GET("/api/messages", controller.GetAllMail)
-	router.GET("/api/messages/:id", getMailRouter)
+	router.GET("/api/messages/:id", controller.GetMail)
 	router.POST("/api/messages", controller.PostMail)
 
 	router.ServeFiles("/static/*filepath", http.Dir("static"))
+
+	return router
+}
+
+func main() {
+	log.SetPrefix("Mail ")
+	godotenv.Load()
+	port := getEnv("PORT", "4020")
+	dbSuffix := getEnv("DB_SUFFIX", "dev")
+	fmt.Println(fmt.Sprintf("Listening on port %s, db = app-%v.db", port, dbSuffix))
+
+	db.InitDb(false)
+	router := setupRouter()
 	log.Fatal(http.ListenAndServe(":"+port, router))
 }
