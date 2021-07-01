@@ -10,56 +10,69 @@ import (
 	"os"
 	"testing"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/pledgecamp/mail-tester/db"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHome(t *testing.T) {
+func initResources() *httprouter.Router {
 	db.InitDb(true)
-	router := setupRouter()
+	return setupRouter()
+}
 
+func initRecorder(router *httprouter.Router, method, url string) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/", nil)
+	req, _ := http.NewRequest(method, url, nil)
 	router.ServeHTTP(w, req)
+	return w
+}
+
+func initFormRecorder(router *httprouter.Router, method, url string, data url.Values) *httptest.ResponseRecorder {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(method, url, bytes.NewBufferString(data.Encode()))
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	router.ServeHTTP(w, req)
+	return w
+}
+
+func initTestRouter(method, url string) *httptest.ResponseRecorder {
+	router := initResources()
+	return initRecorder(router, method, url)
+}
+
+func TestHome(t *testing.T) {
+	w := initTestRouter("GET", "/")
 
 	assert.Equal(t, 200, w.Code)
 	assert.Contains(t, w.Body.String(), "<title>Mail Tester</title>")
 }
 
 func TestGetMail(t *testing.T) {
-	db.InitDb(true)
-	router := setupRouter()
+	router := initResources()
 
 	testSubject := "Test subject"
 	db.AddMail(&db.Email{
 		Subject: testSubject,
 	})
 	t.Run("Get mail with id=1", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/mail/1", nil)
-		router.ServeHTTP(w, req)
+		w := initRecorder(router, "GET", "/mail/1")
 
 		assert.Equal(t, 200, w.Code)
 		assert.Contains(t, w.Body.String(), fmt.Sprintf("<div class=\"r2\">%v</div>", testSubject))
 	})
 
 	t.Run("Get mail 404", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/mail/2", nil)
-		router.ServeHTTP(w, req)
+		w := initRecorder(router, "GET", "/mail/2")
 
 		assert.Equal(t, 404, w.Code)
 	})
 }
 
 func TestGetMailsAPI(t *testing.T) {
-	db.InitDb(true)
-	router := setupRouter()
+	router := initResources()
 
 	t.Run("Get empty message list", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/api/messages", nil)
-		router.ServeHTTP(w, req)
+		w := initRecorder(router, "GET", "/api/messages")
 
 		assert.Equal(t, 200, w.Code)
 		mailList := make([]db.Email, 0)
@@ -75,9 +88,7 @@ func TestGetMailsAPI(t *testing.T) {
 	}
 
 	t.Run("Get the message list with 3 email messages", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/api/messages", nil)
-		router.ServeHTTP(w, req)
+		w := initRecorder(router, "GET", "/api/messages")
 
 		assert.Equal(t, 200, w.Code)
 		mailList := make([]db.Email, 0)
@@ -90,8 +101,7 @@ func TestGetMailsAPI(t *testing.T) {
 }
 
 func TestGetMailAPI(t *testing.T) {
-	db.InitDb(true)
-	router := setupRouter()
+	router := initResources()
 
 	for i := 1; i <= 3; i++ {
 		testSubject := fmt.Sprintf("Test subject %v", i)
@@ -101,9 +111,7 @@ func TestGetMailAPI(t *testing.T) {
 	}
 
 	t.Run("Get mail with id=1", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/api/messages/1", nil)
-		router.ServeHTTP(w, req)
+		w := initRecorder(router, "GET", "/api/messages/1")
 
 		assert.Equal(t, 200, w.Code)
 		email := db.Email{}
@@ -112,17 +120,14 @@ func TestGetMailAPI(t *testing.T) {
 	})
 
 	t.Run("Get mail with id=99 (404)", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/api/messages/99", nil)
-		router.ServeHTTP(w, req)
+		w := initRecorder(router, "GET", "/api/messages/99")
 
 		assert.Equal(t, 404, w.Code)
 	})
 }
 
 func TestPostMailAPI(t *testing.T) {
-	db.InitDb(true)
-	router := setupRouter()
+	router := initResources()
 
 	testCases := []struct {
 		subject string
@@ -134,13 +139,10 @@ func TestPostMailAPI(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run("Post mail", func(t *testing.T) {
-			w := httptest.NewRecorder()
 			data := url.Values{
 				"subject": {tc.subject},
 			}
-			req, _ := http.NewRequest("POST", "/api/messages", bytes.NewBufferString(data.Encode()))
-			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-			router.ServeHTTP(w, req)
+			w := initFormRecorder(router, "POST", "/api/messages", data)
 
 			assert.Equal(t, 200, w.Code)
 			email := db.Email{}
@@ -149,9 +151,7 @@ func TestPostMailAPI(t *testing.T) {
 		})
 	}
 	t.Run("Get the message list with 3 email messages", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/api/messages", nil)
-		router.ServeHTTP(w, req)
+		w := initRecorder(router, "GET", "/api/messages")
 
 		assert.Equal(t, 200, w.Code)
 		mailList := make([]db.Email, 0)
@@ -161,19 +161,15 @@ func TestPostMailAPI(t *testing.T) {
 }
 
 func TestPostMailAPIDbConnection(t *testing.T) {
-	db.InitDb(true)
-	router := setupRouter()
+	router := initResources()
 
 	for i := 1; i <= 2<<7; i++ {
 		testSubject := fmt.Sprintf("Test subject %v", i)
 		t.Run("Post mail", func(t *testing.T) {
-			w := httptest.NewRecorder()
 			data := url.Values{
 				"subject": {testSubject},
 			}
-			req, _ := http.NewRequest("POST", "/api/messages", bytes.NewBufferString(data.Encode()))
-			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-			router.ServeHTTP(w, req)
+			w := initFormRecorder(router, "POST", "/api/messages", data)
 
 			assert.Equal(t, 200, w.Code)
 			email := db.Email{}
