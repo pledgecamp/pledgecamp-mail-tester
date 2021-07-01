@@ -17,3 +17,4 @@ vendor/
 *.db
 *.env
 mail
+mail-tester
