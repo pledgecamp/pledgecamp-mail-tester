@@ -80,11 +80,13 @@ func TestGetMailsAPI(t *testing.T) {
 		assert.Len(t, mailList, 0)
 	})
 
+	expectedSubjects := make([]string, 3)
 	for i := 1; i <= 3; i++ {
 		testSubject := fmt.Sprintf("Test subject %v", i)
 		db.AddMail(&db.Email{
 			Subject: testSubject,
 		})
+		expectedSubjects = append([]string{testSubject}, expectedSubjects...)
 	}
 
 	t.Run("Get the message list with 3 email messages", func(t *testing.T) {
@@ -94,8 +96,11 @@ func TestGetMailsAPI(t *testing.T) {
 		mailList := make([]db.Email, 0)
 		json.NewDecoder(w.Body).Decode(&mailList)
 		assert.Len(t, mailList, 3)
+		mailId := mailList[0].ID
 		for i, email := range mailList {
-			assert.Equal(t, fmt.Sprintf("Test subject %v", i+1), email.Subject)
+			assert.GreaterOrEqual(t, mailId, email.ID)
+			assert.Equal(t, expectedSubjects[i], email.Subject)
+			mailId = email.ID
 		}
 	})
 }
