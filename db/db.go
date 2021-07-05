@@ -96,7 +96,7 @@ func GetAllMail() []Email {
 	db, err := dbOpen()
 	defer db.Close()
 	checkError(err)
-	statement, err := db.Prepare("SELECT id, sender, receiver, subject, SUBSTR(text, 0, 100) FROM mail")
+	statement, err := db.Prepare("SELECT id, sender, receiver, subject, SUBSTR(text, 0, 100) FROM mail ORDER BY id DESC")
 	defer statement.Close()
 	checkError(err)
 	rows, err := statement.Query()
