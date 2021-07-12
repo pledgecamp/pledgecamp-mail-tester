@@ -1,34 +1,54 @@
 {{ define "home" }}
 {{ template "head" . }}
-    <title>Mail Tester</title>
-  </head>
-  <body>
-      <div class="header">
-        <div class="title">Mail Tester</div>
-      </div>
-      <div class="content">
-        <div class="emails">
-          {{ range . }}
-            <div class="email">
-              <div class="id">
-                {{ .ID }}
-              </div>
-              <div class="address">
-                <div class="to">
-                  <span>T:</span> {{ .To }}
-                </div>
-                <div class="from">
-                  <span>F:</span> {{ .From }}
-                </div>
-              </div>
-              <div class="subject">
-                {{ .Subject }}
-              </div>
-              <a href="/mail/{{ .ID }}"></a>
-            </div>
-          {{end}}
+<title>Mail Tester</title>
+</head>
+
+<body>
+  <div class="header">
+    <div class="title">Mail Tester</div>
+    <a class="clear-all">Clear all</a>
+  </div>
+  <div class="content">
+    <div class="emails">
+      {{ range . }}
+      <div class="email">
+        <div class="id">
+          {{ .ID }}
         </div>
+        <div class="address">
+          <div class="to">
+            <span>T:</span> {{ .To }}
+          </div>
+          <div class="from">
+            <span>F:</span> {{ .From }}
+          </div>
+        </div>
+        <div class="subject">
+          {{ .Subject }}
+        </div>
+        <a href="/mails/{{ .ID }}"></a>
       </div>
-  </body>
+      {{end}}
+    </div>
+  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      document.querySelector('.clear-all').addEventListener('click', function (e) {
+        if (confirm('Are you sure to clear all mail messages?')) {
+          fetch('/mails', {
+            method: 'DELETE'
+          }).then(function (rsp) {
+            if (rsp.ok) {
+              window.location.reload()
+            }
+          }, function (e) {
+            alert(e.message)
+          })
+        }
+      })
+    })
+  </script>
+</body>
+
 </html>
 {{ end }}

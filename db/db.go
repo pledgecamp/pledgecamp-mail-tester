@@ -54,6 +54,20 @@ func InitDb(drop bool) {
 	statement.Exec()
 }
 
+func DeleteMail(id int64) bool {
+	db, err := dbOpen()
+	defer db.Close()
+	checkError(err)
+	statement, err := db.Prepare("DELETE FROM mail WHERE id=?")
+	defer statement.Close()
+	checkError(err)
+	result, err := statement.Exec(id)
+	checkError(err)
+	rowsAffected, err := result.RowsAffected()
+	checkError(err)
+	return rowsAffected > 0
+}
+
 // AddMail saves mail to the database
 func AddMail(mail *Email) int64 {
 	db, err := dbOpen()

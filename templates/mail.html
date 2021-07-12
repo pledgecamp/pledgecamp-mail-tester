@@ -27,6 +27,7 @@
   <body>
     <div class="header">
       <div class="title">Mail {{.Email.ID}}</div>
+      <a class="delete">Delete</a>
       <div class="go-home">
         Go back <a href="/">home</a>.
       </div>
@@ -52,6 +53,23 @@
     <div class="content">
       {{.RawHTML}}
     </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        document.querySelector('.delete').addEventListener('click', function (e) {
+          if (confirm('Are you sure to delete this mail message?')) {
+            fetch('/mails/{{.Email.ID}}', {
+              method: 'DELETE'
+            }).then(function (rsp) {
+              if (rsp.ok) {
+                window.location = '/'
+              }
+            }, function (e) {
+              alert(e.message)
+            })
+          }
+        })
+      })
+    </script>
   </body>
 </html>
 {{ end }}

@@ -24,7 +24,9 @@ func setupRouter() *httprouter.Router {
 
 	// Mail viewer routes
 	router.GET("/", controller.HomeHandler)
-	router.GET("/mail/:id", controller.EmailHandler)
+	router.GET("/mails/:id", controller.EmailHandler)
+	router.DELETE("/mails/:id", controller.DeleteEmailHandler)
+	router.DELETE("/mails", controller.ClearEmailHandler)
 
 	// API routes
 	router.GET("/api/messages", controller.GetAllMail)
