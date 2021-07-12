@@ -57,6 +57,23 @@ func EmailHandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	t.ExecuteTemplate(w, "mail", viewEmail)
 }
 
+func DeleteEmailHandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	id, err := parseId(p.ByName("id"))
+	if err != nil {
+		ErrorHandler(w)
+		return
+	}
+	deleted := db.DeleteMail(id)
+	if !deleted {
+		ErrorHandler(w)
+		return
+	}
+}
+
+func ClearEmailHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	db.InitDb(true)
+}
+
 func printMail(e *db.Email) {
 	if strings.Contains(log.Prefix(), "Mail") {
 		log.Println(fmt.Sprintf("From: %s    |    To: %s", e.From, e.To))

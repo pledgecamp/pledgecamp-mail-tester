@@ -40,11 +40,22 @@ func initTestRouter(method, url string) *httptest.ResponseRecorder {
 	return initRecorder(router, method, url)
 }
 
+func generateMails(count int) {
+	for i := 1; i <= count; i++ {
+		testSubject := fmt.Sprintf("Test subject %v", i)
+		db.AddMail(&db.Email{
+			Subject: testSubject,
+		})
+	}
+}
+
 func TestHome(t *testing.T) {
 	w := initTestRouter("GET", "/")
 
 	assert.Equal(t, 200, w.Code)
 	assert.Contains(t, w.Body.String(), "<title>Mail Tester</title>")
+	// Ensure "Clear all" button presents
+	assert.Contains(t, w.Body.String(), "Clear all")
 }
 
 func TestGetMail(t *testing.T) {
@@ -55,14 +66,16 @@ func TestGetMail(t *testing.T) {
 		Subject: testSubject,
 	})
 	t.Run("Get mail with id=1", func(t *testing.T) {
-		w := initRecorder(router, "GET", "/mail/1")
+		w := initRecorder(router, "GET", "/mails/1")
 
 		assert.Equal(t, 200, w.Code)
 		assert.Contains(t, w.Body.String(), fmt.Sprintf("<div class=\"r2\">%v</div>", testSubject))
+		// Ensure "Delete" button presents
+		assert.Contains(t, w.Body.String(), "Delete")
 	})
 
 	t.Run("Get mail 404", func(t *testing.T) {
-		w := initRecorder(router, "GET", "/mail/2")
+		w := initRecorder(router, "GET", "/mails/2")
 
 		assert.Equal(t, 404, w.Code)
 	})
@@ -108,12 +121,7 @@ func TestGetMailsAPI(t *testing.T) {
 func TestGetMailAPI(t *testing.T) {
 	router := initResources()
 
-	for i := 1; i <= 3; i++ {
-		testSubject := fmt.Sprintf("Test subject %v", i)
-		db.AddMail(&db.Email{
-			Subject: testSubject,
-		})
-	}
+	generateMails(3)
 
 	t.Run("Get mail with id=1", func(t *testing.T) {
 		w := initRecorder(router, "GET", "/api/messages/1")
@@ -182,6 +190,50 @@ func TestPostMailAPIDbConnection(t *testing.T) {
 			assert.Equal(t, testSubject, email.Subject)
 		})
 	}
+}
+
+func TestDeleteMailAPI(t *testing.T) {
+	router := initResources()
+
+	generateMails(3)
+
+	t.Run("Delete mail with id=2", func(t *testing.T) {
+		w := initRecorder(router, "GET", "/api/messages")
+		assert.Equal(t, 200, w.Code)
+		mailList := make([]db.Email, 0)
+		json.NewDecoder(w.Body).Decode(&mailList)
+		assert.Len(t, mailList, 3)
+
+		w = initRecorder(router, "DELETE", "/mails/2")
+		assert.Equal(t, 200, w.Code)
+
+		w = initRecorder(router, "GET", "/api/messages")
+		assert.Equal(t, 200, w.Code)
+		json.NewDecoder(w.Body).Decode(&mailList)
+		assert.Len(t, mailList, 2)
+	})
+}
+
+func TestClearAllAPI(t *testing.T) {
+	router := initResources()
+
+	generateMails(3)
+
+	t.Run("Clear all mails", func(t *testing.T) {
+		w := initRecorder(router, "GET", "/api/messages")
+		assert.Equal(t, 200, w.Code)
+		mailList := make([]db.Email, 0)
+		json.NewDecoder(w.Body).Decode(&mailList)
+		assert.Len(t, mailList, 3)
+
+		w = initRecorder(router, "DELETE", "/mails")
+		assert.Equal(t, 200, w.Code)
+
+		w = initRecorder(router, "GET", "/api/messages")
+		assert.Equal(t, 200, w.Code)
+		json.NewDecoder(w.Body).Decode(&mailList)
+		assert.Len(t, mailList, 0)
+	})
 }
 
 func TestMain(m *testing.M) {
