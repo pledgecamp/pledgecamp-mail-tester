@@ -6,6 +6,12 @@
     font-weight: 600;
     text-align: center;
     padding: 16px 0;
+    margin-left: 16px;
+  }
+  .mail-info {
+    margin: 0 auto;
+    padding-top: 24px;
+    max-width: 600px;
   }
   .mail-info > div {
     padding: 6px 0;
@@ -21,54 +27,51 @@
   .mail-info .r2 {
     max-width: 600px;
   }
+  .header-right {
+    display: flex;
+    align-items: center;
+  }
 </style>
-    <title>Mail {{.Email.ID}}</title>
+    <title>Mail {{ .Email.ID }}</title>
   </head>
   <body>
-    <div class="header">
-      <div class="title">Mail {{.Email.ID}}</div>
-      <a class="delete">Delete</a>
-      <div class="go-home">
-        Go back <a href="/">home</a>.
-      </div>
-      <div class="mail-info">
-        <div>
-          <div class="r1">Subject:</div>
-          <div class="r2">{{.Email.Subject}}</div>
-        </div>
-        <div>
-          <div class="r1">To:</div>
-          <div class="r2">{{.Email.To}}</div>
-        </div>
-        <div>
-          <div class="r1">From:</div>
-          <div class="r2">{{.Email.From}}</div>
-        </div>
-        <div>
-          <div class="r1">Text:</div>
-          <div class="r2">{{.Email.Text}}</div>
+    <div class="header container">
+      <div class="title">Mail {{ .Email.ID }}</div>
+      <div class="header-right">
+        <a class="delete">Delete</a>
+        <div class="go-home">
+          Go back <a href="/">home</a>.
         </div>
       </div>
     </div>
-    <div class="content">
-      {{.RawHTML}}
+    <div class="mail-info container">
+      <div>
+        <div class="r1">Subject:</div>
+        <div class="r2">{{ .Email.Subject }}</div>
+      </div>
+      <div>
+        <div class="r1">To:</div>
+        <div class="r2">{{ .Email.To }}</div>
+      </div>
+      <div>
+        <div class="r1">From:</div>
+        <div class="r2">{{ .Email.From }}</div>
+      </div>
+      <div>
+        <div class="r1">Text:</div>
+        <div class="r2">{{ .Email.Text }}</div>
+      </div>
+    </div>
+    <div class="content container">
+      {{ .RawHTML }}
     </div>
     <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        document.querySelector('.delete').addEventListener('click', function (e) {
-          if (confirm('Are you sure to delete this mail message?')) {
-            fetch('/mails/{{.Email.ID}}', {
-              method: 'DELETE'
-            }).then(function (rsp) {
-              if (rsp.ok) {
-                window.location = '/'
-              }
-            }, function (e) {
-              alert(e.message)
-            })
-          }
-        })
-      })
+      addDeleteEvent({
+        selector: '.delete',
+        endpoint: '/mails/{{ .Email.ID }}',
+        message: 'Are you sure to delete this message?',
+        onComplete: function() { window.location = '/'; },
+      });
     </script>
   </body>
 </html>
