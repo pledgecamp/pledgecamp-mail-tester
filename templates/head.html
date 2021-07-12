@@ -15,20 +15,15 @@
       }
       .header {
         display: flex;
-        flex-direction: column;
         width: 100%;
         border-bottom: 1px solid #bcd;
         padding: 28px 0 24px;
-        justify-content: center;
+        justify-content: space-between;
         align-items: center;
       }
       .clear-all, .delete {
-        position: absolute;
-        top: 28px;
-        right: 20px;
-        border: 1px solid #888;
-        border-radius: 5px;
-        padding: 5px;
+        border-radius: 6px;
+        padding: 6px 12px 5px;
         cursor: pointer;
         background-color: red;
         color: white;
@@ -36,10 +31,15 @@
       .title {
         font-size: 24px;
       }
-      .content {
-        max-width: 1000px;
+      .container {
+        max-width: 980px;
         margin: 0 auto;
-        padding: 24px;
+        padding-left: 40px;
+        padding-right: 40px;
+      }
+      .content {
+        padding-top: 24px;
+        padding-bottom: 48px;
       }
       .emails .email {
         width: 100%;
@@ -76,4 +76,23 @@
         font-weight: 600;
       }
     </style>
+    <script>
+      function addDeleteEvent(options) {
+        document.addEventListener('DOMContentLoaded', function () {
+          document.querySelector(options.selector).addEventListener('click', function (e) {
+            if(confirm(options.message)) {
+              fetch(options.endpoint, {
+                method: 'DELETE'
+              }).then(function(rsp) {
+                if(rsp.ok) {
+                  options.onComplete();
+                }
+              }, function (e) {
+                alert(e.message);
+              });
+            }
+          });
+        });
+      }
+    </script>
 {{ end }}

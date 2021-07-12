@@ -4,11 +4,11 @@
 </head>
 
 <body>
-  <div class="header">
+  <div class="header container">
     <div class="title">Mail Tester</div>
     <a class="clear-all">Clear all</a>
   </div>
-  <div class="content">
+  <div class="content container">
     <div class="emails">
       {{ range . }}
       <div class="email">
@@ -28,25 +28,16 @@
         </div>
         <a href="/mails/{{ .ID }}"></a>
       </div>
-      {{end}}
+      {{ end }}
     </div>
   </div>
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      document.querySelector('.clear-all').addEventListener('click', function (e) {
-        if (confirm('Are you sure to clear all mail messages?')) {
-          fetch('/mails', {
-            method: 'DELETE'
-          }).then(function (rsp) {
-            if (rsp.ok) {
-              window.location.reload()
-            }
-          }, function (e) {
-            alert(e.message)
-          })
-        }
-      })
-    })
+    addDeleteEvent({
+      selector: '.clear-all',
+      endpoint: '/mails',
+      message: 'Are you sure you want to clear all mail messages?',
+      onComplete: function() { window.location.reload(); },
+    });
   </script>
 </body>
 
